@@ -24,6 +24,7 @@
           "prompt": "Instructions",
           "chat_model": "[%key:common::generic::model%]",
           "max_tokens": "Maximum tokens to return in response",
+          "send_sampling_parameters": "Send sampling parameters (temperature/top_p)",
           "temperature": "Temperature",
           "top_p": "Top P",
           "llm_hass_api": "[%key:common::config_flow::data::llm_hass_api%]",
@@ -36,6 +37,7 @@
         },
         "data_description": {
           "prompt": "Instruct how the LLM should respond. This can be a template.",
+          "send_sampling_parameters": "Turn this off for models that reject temperature/top_p (for example strict reasoning models)",
           "strip_web_citations": "Remove inline citation markers from spoken responses when web search is enabled",
           "reasoning_effort": "How many reasoning tokens the model should generate before creating a response to the prompt (for certain reasoning models)",
           "web_search": "Allow the model to search the web for the latest information before generating a response",

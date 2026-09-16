@@ -46,6 +46,7 @@ from .const import (
     CONF_PROMPT,
     CONF_REASONING_EFFORT,
     CONF_RECOMMENDED,
+    CONF_SEND_SAMPLING_PARAMETERS,
     CONF_STRIP_WEB_CITATIONS,
     CONF_TEMPERATURE,
     CONF_TOP_P,
@@ -60,12 +61,14 @@ from .const import (
     RECOMMENDED_CHAT_MODEL,
     RECOMMENDED_MAX_TOKENS,
     RECOMMENDED_REASONING_EFFORT,
+    RECOMMENDED_SEND_SAMPLING_PARAMETERS,
     RECOMMENDED_STRIP_WEB_CITATIONS,
     RECOMMENDED_TEMPERATURE,
     RECOMMENDED_TOP_P,
     RECOMMENDED_WEB_SEARCH,
     RECOMMENDED_WEB_SEARCH_CONTEXT_SIZE,
     RECOMMENDED_WEB_SEARCH_USER_LOCATION,
+    REASONING_EFFORT_DISABLED,
     UNSUPPORTED_MODELS,
 )
 
@@ -271,6 +274,13 @@ def openai_config_option_schema(
         suggested_llm_apis, str
     ):
         suggested_llm_apis = [suggested_llm_apis]
+
+    selected_reasoning_effort = options.get(
+        CONF_REASONING_EFFORT, RECOMMENDED_REASONING_EFFORT
+    )
+    if selected_reasoning_effort == "":
+        selected_reasoning_effort = REASONING_EFFORT_DISABLED
+
     schema: VolDictType = {
         vol.Optional(
             CONF_PROMPT,
@@ -305,6 +315,13 @@ def openai_config_option_schema(
                 default=RECOMMENDED_MAX_TOKENS,
             ): int,
             vol.Optional(
+                CONF_SEND_SAMPLING_PARAMETERS,
+                description={
+                    "suggested_value": options.get(CONF_SEND_SAMPLING_PARAMETERS)
+                },
+                default=RECOMMENDED_SEND_SAMPLING_PARAMETERS,
+            ): bool,
+            vol.Optional(
                 CONF_TOP_P,
                 description={"suggested_value": options.get(CONF_TOP_P)},
                 default=RECOMMENDED_TOP_P,
@@ -316,12 +333,15 @@ def openai_config_option_schema(
             ): NumberSelector(NumberSelectorConfig(min=0, max=2, step=0.05)),
             vol.Optional(
                 CONF_REASONING_EFFORT,
-                description={"suggested_value": options.get(CONF_REASONING_EFFORT)},
-                default=RECOMMENDED_REASONING_EFFORT,
+                description={"suggested_value": selected_reasoning_effort},
+                default=selected_reasoning_effort,
             ): SelectSelector(
                 SelectSelectorConfig(
                     options=[
-                        SelectOptionDict(label="Disabled", value=""),
+                        SelectOptionDict(
+                            label="Disabled",
+                            value=REASONING_EFFORT_DISABLED,
+                        ),
                         SelectOptionDict(label="Low", value="low"),
                         SelectOptionDict(label="Medium", value="medium"),
                         SelectOptionDict(label="High", value="high"),

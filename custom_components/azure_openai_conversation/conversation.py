@@ -48,6 +48,7 @@ from .const import (
     CONF_MAX_TOKENS,
     CONF_PROMPT,
     CONF_REASONING_EFFORT,
+    CONF_SEND_SAMPLING_PARAMETERS,
     CONF_STRIP_WEB_CITATIONS,
     CONF_TEMPERATURE,
     CONF_TOP_P,
@@ -63,10 +64,12 @@ from .const import (
     RECOMMENDED_CHAT_MODEL,
     RECOMMENDED_MAX_TOKENS,
     RECOMMENDED_REASONING_EFFORT,
+    RECOMMENDED_SEND_SAMPLING_PARAMETERS,
     RECOMMENDED_STRIP_WEB_CITATIONS,
     RECOMMENDED_TEMPERATURE,
     RECOMMENDED_TOP_P,
     RECOMMENDED_WEB_SEARCH_CONTEXT_SIZE,
+    REASONING_EFFORT_DISABLED,
 )
 
 # Max number of back and forth with the LLM to generate a response
@@ -495,6 +498,12 @@ class AzureOpenAIConversationEntity(
         reasoning_effort = options.get(
             CONF_REASONING_EFFORT, RECOMMENDED_REASONING_EFFORT
         )
+        if reasoning_effort in ("", REASONING_EFFORT_DISABLED):
+            reasoning_effort = None
+        send_sampling_parameters = options.get(
+            CONF_SEND_SAMPLING_PARAMETERS,
+            RECOMMENDED_SEND_SAMPLING_PARAMETERS,
+        )
 
         # To prevent infinite loops, we limit the number of iterations
         for _iteration in range(MAX_TOOL_ITERATIONS):
@@ -504,11 +513,15 @@ class AzureOpenAIConversationEntity(
                 "max_output_tokens": options.get(
                     CONF_MAX_TOKENS, RECOMMENDED_MAX_TOKENS
                 ),
-                "top_p": options.get(CONF_TOP_P, RECOMMENDED_TOP_P),
-                "temperature": options.get(CONF_TEMPERATURE, RECOMMENDED_TEMPERATURE),
                 "user": chat_log.conversation_id,
                 "stream": True,
             }
+
+            if send_sampling_parameters:
+                model_args["top_p"] = options.get(CONF_TOP_P, RECOMMENDED_TOP_P)
+                model_args["temperature"] = options.get(
+                    CONF_TEMPERATURE, RECOMMENDED_TEMPERATURE
+                )
             if tools:
                 model_args["tools"] = tools
 

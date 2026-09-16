@@ -45,6 +45,7 @@ from .const import (
     CONF_MAX_TOKENS,
     CONF_PROMPT,
     CONF_REASONING_EFFORT,
+    CONF_SEND_SAMPLING_PARAMETERS,
     CONF_TEMPERATURE,
     CONF_TOP_P,
     DOMAIN,
@@ -52,8 +53,10 @@ from .const import (
     RECOMMENDED_CHAT_MODEL,
     RECOMMENDED_MAX_TOKENS,
     RECOMMENDED_REASONING_EFFORT,
+    RECOMMENDED_SEND_SAMPLING_PARAMETERS,
     RECOMMENDED_TEMPERATURE,
     RECOMMENDED_TOP_P,
+    REASONING_EFFORT_DISABLED,
 )
 
 SERVICE_GENERATE_IMAGE = "generate_image"
@@ -249,6 +252,13 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             reasoning_effort = entry.options.get(
                 CONF_REASONING_EFFORT, RECOMMENDED_REASONING_EFFORT
             )
+            if reasoning_effort in ("", REASONING_EFFORT_DISABLED):
+                reasoning_effort = None
+
+            send_sampling_parameters = entry.options.get(
+                CONF_SEND_SAMPLING_PARAMETERS,
+                RECOMMENDED_SEND_SAMPLING_PARAMETERS,
+            )
 
             model_args = {
                 "model": model,
@@ -256,13 +266,15 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 "max_output_tokens": entry.options.get(
                     CONF_MAX_TOKENS, RECOMMENDED_MAX_TOKENS
                 ),
-                "top_p": entry.options.get(CONF_TOP_P, RECOMMENDED_TOP_P),
-                "temperature": entry.options.get(
-                    CONF_TEMPERATURE, RECOMMENDED_TEMPERATURE
-                ),
                 "user": call.context.user_id,
                 "store": False,
             }
+
+            if send_sampling_parameters:
+                model_args["top_p"] = entry.options.get(CONF_TOP_P, RECOMMENDED_TOP_P)
+                model_args["temperature"] = entry.options.get(
+                    CONF_TEMPERATURE, RECOMMENDED_TEMPERATURE
+                )
 
             if reasoning_effort:
                 model_args["reasoning"] = {"effort": reasoning_effort}
