@@ -287,11 +287,6 @@ def openai_config_option_schema(
         vol.Required(
             CONF_RECOMMENDED, default=options.get(CONF_RECOMMENDED, False)
         ): bool,
-        vol.Optional(
-            CONF_STRIP_WEB_CITATIONS,
-            description={"suggested_value": options.get(CONF_STRIP_WEB_CITATIONS)},
-            default=RECOMMENDED_STRIP_WEB_CITATIONS,
-        ): bool,
     }
 
     if options.get(CONF_RECOMMENDED):
@@ -339,6 +334,13 @@ def openai_config_option_schema(
                 CONF_WEB_SEARCH,
                 description={"suggested_value": options.get(CONF_WEB_SEARCH)},
                 default=RECOMMENDED_WEB_SEARCH,
+            ): bool,
+            vol.Optional(
+                CONF_STRIP_WEB_CITATIONS,
+                description={
+                    "suggested_value": options.get(CONF_STRIP_WEB_CITATIONS)
+                },
+                default=RECOMMENDED_STRIP_WEB_CITATIONS,
             ): bool,
             vol.Optional(
                 CONF_WEB_SEARCH_CONTEXT_SIZE,
