@@ -357,7 +357,7 @@ def openai_config_option_schema(
                 SelectSelectorConfig(
                     options=[
                         SelectOptionDict(
-                            label="Disabled",
+                            label="None",
                             value=REASONING_EFFORT_DISABLED,
                         ),
                         SelectOptionDict(label="Low", value="low"),
