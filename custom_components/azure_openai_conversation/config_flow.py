@@ -177,7 +177,11 @@ class AzureOpenAIOptionsFlow(OptionsFlow):
 
                 if user_input.get(CONF_WEB_SEARCH):
                     if user_input.get(CONF_WEB_SEARCH_USER_LOCATION):
-                        user_input.update(await self.get_location_data())
+                        user_input.update(
+                            await self.get_location_data(
+                                user_input.get(CONF_CHAT_MODEL)
+                            )
+                        )
 
                 if not errors:
                     return self.async_create_entry(title="", data=user_input)
@@ -200,7 +204,7 @@ class AzureOpenAIOptionsFlow(OptionsFlow):
             errors=errors,
         )
 
-    async def get_location_data(self) -> dict[str, str]:
+    async def get_location_data(self, model: str | None = None) -> dict[str, str]:
         """Get approximate location data of the user."""
         location_data: dict[str, str] = {}
         zone_home = self.hass.states.get(ENTITY_ID_HOME)
@@ -225,29 +229,43 @@ class AzureOpenAIOptionsFlow(OptionsFlow):
                     ): str,
                 }
             )
-            response = await client.responses.create(
-                model=RECOMMENDED_CHAT_MODEL,
-                input=[
-                    {
-                        "role": "system",
-                        "content": "Where are the following coordinates located: "
-                        f"({zone_home.attributes[ATTR_LATITUDE]},"
-                        f" {zone_home.attributes[ATTR_LONGITUDE]})?",
-                    }
-                ],
-                text={
-                    "format": {
-                        "type": "json_schema",
-                        "name": "approximate_location",
-                        "description": "Approximate location data of the user "
-                        "for refined web search results",
-                        "schema": convert(location_schema),
-                        "strict": False,
-                    }
-                },
-                store=False,
+            selected_model = (
+                model
+                or self.config_entry.options.get(CONF_CHAT_MODEL)
+                or RECOMMENDED_CHAT_MODEL
             )
-            location_data = location_schema(json.loads(response.output_text) or {})
+
+            try:
+                response = await client.responses.create(
+                    model=selected_model,
+                    input=[
+                        {
+                            "role": "system",
+                            "content": "Where are the following coordinates located: "
+                            f"({zone_home.attributes[ATTR_LATITUDE]},"
+                            f" {zone_home.attributes[ATTR_LONGITUDE]})?",
+                        }
+                    ],
+                    text={
+                        "format": {
+                            "type": "json_schema",
+                            "name": "approximate_location",
+                            "description": "Approximate location data of the user "
+                            "for refined web search results",
+                            "schema": convert(location_schema),
+                            "strict": False,
+                        }
+                    },
+                    store=False,
+                )
+                location_data = location_schema(json.loads(response.output_text) or {})
+            except (openai.OpenAIError, json.JSONDecodeError, vol.Invalid) as err:
+                _LOGGER.warning(
+                    "Could not infer city/region for web search location with model "
+                    "`%s`; falling back to country/timezone only: %s",
+                    selected_model,
+                    err,
+                )
 
         if self.hass.config.country:
             location_data[CONF_WEB_SEARCH_COUNTRY] = self.hass.config.country
