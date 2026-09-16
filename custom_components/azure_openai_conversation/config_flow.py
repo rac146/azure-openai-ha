@@ -46,6 +46,7 @@ from .const import (
     CONF_PROMPT,
     CONF_REASONING_EFFORT,
     CONF_RECOMMENDED,
+    CONF_STRIP_WEB_CITATIONS,
     CONF_TEMPERATURE,
     CONF_TOP_P,
     CONF_WEB_SEARCH,
@@ -59,6 +60,7 @@ from .const import (
     RECOMMENDED_CHAT_MODEL,
     RECOMMENDED_MAX_TOKENS,
     RECOMMENDED_REASONING_EFFORT,
+    RECOMMENDED_STRIP_WEB_CITATIONS,
     RECOMMENDED_TEMPERATURE,
     RECOMMENDED_TOP_P,
     RECOMMENDED_WEB_SEARCH,
@@ -285,6 +287,11 @@ def openai_config_option_schema(
         vol.Required(
             CONF_RECOMMENDED, default=options.get(CONF_RECOMMENDED, False)
         ): bool,
+        vol.Optional(
+            CONF_STRIP_WEB_CITATIONS,
+            description={"suggested_value": options.get(CONF_STRIP_WEB_CITATIONS)},
+            default=RECOMMENDED_STRIP_WEB_CITATIONS,
+        ): bool,
     }
 
     if options.get(CONF_RECOMMENDED):
@@ -318,7 +325,12 @@ def openai_config_option_schema(
                 default=RECOMMENDED_REASONING_EFFORT,
             ): SelectSelector(
                 SelectSelectorConfig(
-                    options=["low", "medium", "high"],
+                    options=[
+                        SelectOptionDict(label="Disabled", value=""),
+                        SelectOptionDict(label="Low", value="low"),
+                        SelectOptionDict(label="Medium", value="medium"),
+                        SelectOptionDict(label="High", value="high"),
+                    ],
                     translation_key=CONF_REASONING_EFFORT,
                     mode=SelectSelectorMode.DROPDOWN,
                 )

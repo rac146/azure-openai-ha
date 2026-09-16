@@ -66,7 +66,7 @@ type OpenAIConfigEntry = ConfigEntry[openai.AsyncClient]
 
 
 _FALLBACK_SUPPORTED_MODEL_ARGS = frozenset(
-    {"reasoning", "top_p", "temperature", "store"}
+    {"reasoning", "top_p", "temperature", "store", "text"}
 )
 _UNSUPPORTED_MODEL_ARGS_CACHE: dict[tuple[str, str], set[str]] = {}
 _UNSUPPORTED_PARAMETER_PATTERN = re.compile(
@@ -246,6 +246,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         ]
 
         try:
+            reasoning_effort = entry.options.get(
+                CONF_REASONING_EFFORT, RECOMMENDED_REASONING_EFFORT
+            )
+
             model_args = {
                 "model": model,
                 "input": messages,
@@ -258,12 +262,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 ),
                 "user": call.context.user_id,
                 "store": False,
-                "reasoning": {
-                    "effort": entry.options.get(
-                        CONF_REASONING_EFFORT, RECOMMENDED_REASONING_EFFORT
-                    )
-                },
             }
+
+            if reasoning_effort:
+                model_args["reasoning"] = {"effort": reasoning_effort}
 
             response: Response = await async_responses_create_with_param_fallback(
                 client,
