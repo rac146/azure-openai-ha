@@ -179,6 +179,25 @@ def _format_tool(
 ) -> FunctionToolParam:
     """Format tool specification."""
 
+    def _convert_tool_schema() -> Any:
+        """Convert tool schema, retrying without custom serializer.
+
+        Some HA tool schemas convert to unsupported placeholders when a
+        serializer is supplied, but convert correctly without one.
+        """
+        converted = convert(tool.parameters, custom_serializer=custom_serializer)
+        if isinstance(converted, dict):
+            return converted
+
+        if custom_serializer is None:
+            return converted
+
+        fallback_converted = convert(tool.parameters)
+        if isinstance(fallback_converted, dict):
+            return fallback_converted
+
+        return converted
+
     def _to_azure_tool_schema(schema: Any) -> dict[str, Any]:
         """Normalize schema to Azure/OpenAI function-tool requirements.
 
@@ -223,9 +242,7 @@ def _format_tool(
     return FunctionToolParam(
         type="function",
         name=tool.name,
-        parameters=_to_azure_tool_schema(
-            convert(tool.parameters, custom_serializer=custom_serializer)
-        ),
+        parameters=_to_azure_tool_schema(_convert_tool_schema()),
         description=tool.description,
         strict=False,
     )
